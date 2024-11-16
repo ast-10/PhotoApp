@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   description: String,
   occupation: String,
   login_name: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
 });
 
 /**

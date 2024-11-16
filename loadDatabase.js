@@ -14,7 +14,7 @@
 const mongoose = require("mongoose");
 mongoose.Promise = require("bluebird");
 mongoose.set("strictQuery", false);
-mongoose.connect("mongodb://127.0.0.1/project6", {
+mongoose.connect("mongodb://127.0.0.1/photoApp", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
