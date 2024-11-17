@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "./styles.css"; // Import the CSS file
 
 function RegistrationForm() {
   const [formData, setFormData] = useState({
@@ -47,17 +48,70 @@ function RegistrationForm() {
   };
 
   return (
-    <div>
+    <div className="registration-form-container">
       <h2>Register</h2>
       <form onSubmit={handleSubmit}>
-        <input type="text" name="login_name" placeholder="Login Name" value={formData.login_name} onChange={handleChange} required />
-        <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
-        <input type="password" name="confirm_password" placeholder="Confirm Password" value={formData.confirm_password} onChange={handleChange} required />
-        <input type="text" name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleChange} required />
-        <input type="text" name="last_name" placeholder="Last Name" value={formData.last_name} onChange={handleChange} required />
-        <input type="text" name="location" placeholder="Location" value={formData.location} onChange={handleChange} />
-        <input type="text" name="description" placeholder="Description" value={formData.description} onChange={handleChange} />
-        <input type="text" name="occupation" placeholder="Occupation" value={formData.occupation} onChange={handleChange} />
+        <input
+          type="text"
+          name="login_name"
+          placeholder="Login Name"
+          value={formData.login_name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="password"
+          name="confirm_password"
+          placeholder="Confirm Password"
+          value={formData.confirm_password}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="first_name"
+          placeholder="First Name"
+          value={formData.first_name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="last_name"
+          placeholder="Last Name"
+          value={formData.last_name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="location"
+          placeholder="Location"
+          value={formData.location}
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="description"
+          placeholder="Description"
+          value={formData.description}
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="occupation"
+          placeholder="Occupation"
+          value={formData.occupation}
+          onChange={handleChange}
+        />
         <button type="submit">Register Me</button>
       </form>
       {message && <p>{message}</p>}

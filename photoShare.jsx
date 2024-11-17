@@ -23,16 +23,6 @@ function UserPhotosRoute({ setUserName }) {
   return <UserPhotos userId={userId} setUserName={setUserName}/>;
 }
 
-function LoginWithRegisterButton() {
-  const navigate = useNavigate();
-  return (
-    <div>
-      <LoginRegister />
-      <button onClick={() => navigate("/register")}>Register Me</button>
-    </div>
-  );
-}
-
 function PhotoShare() {
   const { user } = useAuth();
   const [_, setUserName] = useState("");
@@ -54,7 +44,7 @@ function PhotoShare() {
           <Grid item sm={9}>
             <Paper className="main-grid-item">
               <Routes>
-                <Route path="/login" element={<LoginWithRegisterButton />} />
+                <Route path="/login" element={<LoginRegister />} />
                 <Route path="/register" element={<RegistrationForm />} />
                 <Route
                   path="/users/:userId"
