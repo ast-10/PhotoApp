@@ -1,0 +1,22 @@
+.user-list-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .user-list-item {
+    cursor: pointer;
+    padding: 12px 16px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .user-list-item:hover {
+    background-color: #e0e0e0; 
+  }
+  
+  .user-list-divider {
+    margin: 0 16px;
+    background-color: #d1d1d1;
+  }
+  

@@ -35,11 +35,10 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 mongoose.Promise = require("bluebird");
 
+// const async = require("async");
+
 const express = require("express");
 const app = express();
-
-app.use(session({secret: "secretKey", resave: false, saveUninitialized: false}));
-app.use(bodyParser.json());
 
 // Load the Mongoose schema for User, Photo, and SchemaInfo
 const User = require("./schema/user.js");
@@ -50,18 +49,24 @@ const SchemaInfo = require("./schema/schemaInfo.js");
 // this line for tests and before submission!
 // const models = require("./modelData/photoApp.js").models;
 mongoose.set("strictQuery", false);
-mongoose.connect("mongodb://127.0.0.1/photoApp", {
+mongoose.connect("mongodb://127.0.0.1/project6", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
+const multer = require('multer');
+const fs = require('fs');
+
+const processFormBody = multer({ storage: multer.memoryStorage() }).single('uploadedphoto');
+
 // We have the express static module
 // (http://expressjs.com/en/starter/static-files.html) do all the work for us.
-
 app.use(express.static(__dirname));
+app.use(session({secret: "secretKey", resave: false, saveUninitialized: false}));
+app.use(bodyParser.json());
 
 const isAuthenticated = (req, res, next) => {
-  if (req.session && Object.keys(req.session.user) === 0) {
+  if (!req.session || !req.session.user || Object.keys(req.session.user).length === 0) {
     return res.status(401).json({ message: "Unauthorized: Please log in" });
   }
   next();
@@ -82,27 +87,25 @@ app.get("/admin/session", (req, res) => {
   }
 });
 
-// Login route
 app.post("/admin/login", express.urlencoded({ extended: false }), async (req, res, next) => {
   const { login_name, password } = req.body;
-
   try {
     const user = await User.findOne({ login_name });
+    console.log(user)
     if (!user || user.password !== password) {
+      console.log("dont know")
       return res.status(400).json({ message: "Invalid login_name or password" });
     }
-
     req.session.regenerate((err) => {
       if (err) return next(err);
-
       req.session.user = { _id: user._id, first_name: user.first_name, last_name: user.last_name };
-
       req.session.save((err) => {
         if (err) return next(err);
         res.status(200).json(req.session.user);
       });
     });
   } catch (error) {
+    console.log(error)
     next(error);
   }
 });
@@ -111,7 +114,6 @@ app.post("/admin/logout", (req, res, next) => {
   req.session.user = null;
   req.session.save((err) => {
     if (err) return next(err);
-
     req.session.regenerate((err) => {
       if (err) return next(err);
       res.status(200).json({ message: "Logged out successfully" });
@@ -119,6 +121,84 @@ app.post("/admin/logout", (req, res, next) => {
   });
 });
 
+app.post('/commentsOfPhoto/:photo_id', async (req, res) => {
+  const photoId = req.params.photo_id;
+  const { comment } = req.body;
+
+  if (!req.session || !req.session.user) {
+    return res.status(401).send('Unauthorized: User is not logged in');
+  }
+
+  if (!comment || comment.trim() === '') {
+    return res.status(400).send('Comment cannot be empty');
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(photoId)) {
+    return res.status(400).send('Invalid photo ID');
+  }
+
+  try {
+    const photo = await Photo.findById(photoId).exec();
+
+    if (!photo) {
+      return res.status(400).send('Photo not found');
+    }
+
+    const newComment = {
+      comment: comment,
+      date_time: new Date(),
+      user_id: req.session.user._id,
+    };
+
+    photo.comments.push(newComment);
+    await photo.save();
+
+    res.status(200).send('Comment added successfully');
+  } catch (err) {
+    console.error('Error adding comment:', err);
+    res.status(500).send('Internal server error');
+  }
+});
+
+app.post('/photos/new', (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).send('Unauthorized: User is not logged in');
+  }
+
+  processFormBody(req, res, async (err) => {
+    if (err || !req.file) {
+      return res.status(400).send('No file received');
+    }
+
+    // Generate a unique filename
+    const timestamp = new Date().valueOf();
+    const filename = 'U' + timestamp + req.file.originalname;
+
+    // Write the file to the images directory
+    fs.writeFile(`./images/${filename}`, req.file.buffer, async (err) => {
+      if (err) {
+        console.error('Error saving file:', err);
+        return res.status(500).send('Error saving file');
+      }
+
+      // Create a new Photo document
+      const newPhoto = new Photo({
+        file_name: filename,
+        date_time: new Date(),
+        user_id: req.session.user._id,
+        comments: [],
+      });
+
+      try {
+        await newPhoto.save();
+        res.status(200).send('Photo uploaded successfully');
+      } catch (error) {
+        console.error('Error saving photo to database:', error);
+        res.status(500).send('Error saving photo to database');
+      }
+    });
+  });
+});
 
 app.get("/", function (request, response) {
   response.send("Simple web server of files from " + __dirname);
@@ -190,6 +270,8 @@ try {
   return response.status(500).send(JSON.stringify(err));
 }
   } else {
+    // If we know understand the parameter we return a (Bad Parameter) (400)
+    // status.
     return response.status(400).send("Bad param " + param);
   }
 });
@@ -199,6 +281,7 @@ try {
  */
 app.get("/user/list", async function(request, response) {
   try {
+    // Gettting id, first name and last name of all the users
     const users = await User.find({}, "_id first_name last_name");
     response.status(200).json(users);
   }catch(error) {
@@ -212,6 +295,7 @@ app.get("/user/list", async function(request, response) {
 
 app.get("/user/:id", async function(request, response) {
   try{
+    // Finding user details based on id parameter
     const user = await User.findById(request.params.id).select("_id first_name last_name location description occupation");
     if(!user){
       return response.status(400).send({ message: "User not found" });
@@ -222,9 +306,6 @@ app.get("/user/:id", async function(request, response) {
     return response.status(400).send({ message: "Invalid user id" });
   }
 });
-/**
- * URL /photosOfUser/:id - Returns the Photos for User (id).
- */
 
 app.post("/user", async (req, res) => {
   const { login_name, password, first_name, last_name, location, description, occupation } = req.body;
@@ -252,26 +333,35 @@ app.post("/user", async (req, res) => {
   }
 });
 
+/**
+ * URL /photosOfUser/:id - Returns the Photos for User (id).
+ */
+
 app.get("/photosOfUser/:id", async function(request, response) {
   try {
+    // Finding photos and other details based on id parameter
     const photos = await Photo.find({ user_id: request.params.id })
     .select("_id user_id comments file_name date_time")
     .lean();
 
+    // Check to see if any photos are present
     if (photos.length === 0){
       console.log("Photos for user with _id:" + request.params.id + " not found.");
       return response.status(400).send({ message: "No photos found for this user" });
     }
 
+    // Creating a list of userIds from all the comments
     const userIds = Array.from(new Set(photos.flatMap(photo => photo.comments.map(comment => comment.user_id.toString()))));
 
     const users = await User.find({ _id: {$in: userIds } }).select("_id first_name last_name");
 
+    // Creating a user object with fields _id, first_name, last_name
     const userMap = users.reduce((map, user) => {
       map[user._id.toString()] = {_id: user._id.toString(), first_name: user.first_name, last_name: user.last_name };
       return map;
     }, {});
 
+    // Attaching the user object to comment object
     photos.forEach(photo => {
       photo.comments.forEach(comment => {
         const user = userMap[comment.user_id.toString()];
@@ -280,7 +370,7 @@ app.get("/photosOfUser/:id", async function(request, response) {
         } else {
           comment.user = { _id: comment.user_id.toString(), first_name: "Unknown", last_name: "User" };
         }
-        // Removing user_id
+        // Removing user_id from comment because it is additional 
         delete comment.user_id;
       });
     });

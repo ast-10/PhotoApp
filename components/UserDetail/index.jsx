@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { 
-  Card, CardContent, Divider, Grid, Typography, Box 
-} from "@mui/material";
+import { Card, CardContent, Divider, Grid, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-//import fetchModel from "../../lib/fetchModelData";
 import axios from 'axios';
+
+
 import "./styles.css";
 
 function UserDetail({ userId, setUserName }) {
@@ -18,69 +17,45 @@ function UserDetail({ userId, setUserName }) {
     });
   }, [userId, setUserName]);
 
-  const handlePhotosClick = () => {
-    navigate(`/photos/${userId}`);
+  const handlePhotosClick = (id) => {
+    navigate(`/photos/${id}`);
   };
 
   if (!userDetails) return <div>Loading user details...</div>;
 
   return (
-    <Grid 
-      container 
-      justifyContent="center" 
-      spacing={2} 
-      sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}
-    >
-      <Grid item sm={8} xs={12}>
-        <Card 
-          sx={{
-            margin: "20px auto",
-            padding: "24px",
-            borderRadius: 3,
-            boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
-          }}
-        >
+    <Grid container justifyContent="center" spacing={2} className="user-detail-container">
+      <Grid item sm={6} xs={12}>
+        <Card className="user-detail-card">
           <CardContent>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h5" className="user-detail-title" gutterBottom>
               {userDetails.first_name} {userDetails.last_name}
             </Typography>
 
-            <Divider sx={{ margin: "20px 0" }} />
+            <Divider sx={{ margin: "15px 0" }} />
 
-            <Box sx={{ marginBottom: 2 }}>
-              <Typography variant="body1" color="text.secondary">
-                <strong>Location:</strong> {userDetails.location}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                <strong>Occupation:</strong> {userDetails.occupation}
-              </Typography>
-            </Box>
+            <Typography variant="body1" className="user-detail-text">
+              <strong>Location:</strong> {userDetails.location}
+            </Typography>
 
-            <Divider sx={{ margin: "20px 0" }} />
+            <Typography variant="body1" className="user-detail-text">
+              <strong>Occupation:</strong> {userDetails.occupation}
+            </Typography>
 
-            <Typography variant="body2" color="text.secondary" sx={{ marginBottom: 2 }}>
+            <Divider sx={{ margin: "15px 0" }} />
+
+            <Typography variant="body1" className="user-detail-text">
               {userDetails.description}
             </Typography>
 
-            <Divider sx={{ margin: "20px 0" }} />
-
-            <Typography variant="body1" color="text.secondary">
-              <strong>User ID:</strong> {userDetails._id}
-            </Typography>
-
-            <Divider sx={{ margin: "20px 0" }} />
+            <Divider sx={{ margin: "15px 0" }} />
 
             <Typography
               variant="body1"
-              color="primary"
-              onClick={handlePhotosClick}
-              sx={{ 
-                cursor: "pointer", 
-                "&:hover": { textDecoration: "underline" }, 
-                fontWeight: 500 
-              }}
+              className="user-detail-link"
+              onClick={() => handlePhotosClick(userDetails._id)}
             >
-              View Photos
+              <strong>Photos</strong>
             </Typography>
           </CardContent>
         </Card>

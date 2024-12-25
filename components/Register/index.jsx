@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "./styles.css"; // Import the CSS file
+import "./styles.css";
 
 function RegistrationForm() {
   const [formData, setFormData] = useState({

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../AuthProvider";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./styles.css"; // Import the CSS file
+import "./styles.css";
 
 function LoginRegister() {
   const { login } = useAuth();

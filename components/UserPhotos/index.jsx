@@ -1,132 +1,187 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Card, CardContent, Divider, Grid, Typography, Box 
+import {
+  Card,
+  CardContent,
+  Divider,
+  Grid,
+  Typography,
+  Box,
+  TextField,
+  Button,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-//import fetchModel from "../../lib/fetchModelData";
+import axios from "axios";
 import "./styles.css";
-import axios from 'axios';
-function UserPhotos({ userId, setUserName }) {
+import { useLocation } from 'react-router-dom';
+
+function UserPhotos({ userId, setUserName, loggedInUser }) {
   const navigate = useNavigate();
   const [userDetails, setUserDetails] = useState(null);
   const [photoDetails, setPhotoDetails] = useState([]);
+  const [newComment, setNewComment] = useState({});
+  const location = useLocation();
 
   useEffect(() => {
-    axios.get(`http://localhost:3000/user/${userId}`).then((result) => {
-      setUserDetails(result.data);
-      setUserName(`${result.data.first_name} ${result.data.last_name}`);
-    });
+    axios
+      .get(`/user/${userId}`)
+      .then((result) => {
+        setUserDetails(result.data);
+        setUserName(`${result.data.first_name} ${result.data.last_name}`);
+      })
+      .catch((error) => {
+        console.error("Error fetching user details:", error);
+      });
 
-    axios.get(`http://localhost:3000/photosOfUser/${userId}`).then((result) => {
-      setPhotoDetails(result.data);
-    });
-  }, [userId, setUserName]);
+    axios
+      .get(`/photosOfUser/${userId}`)
+      .then((result) => {
+        console.log("Photo Details:", result.data);
+        setPhotoDetails(result.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching photos:", error);
+      });
+  }, [userId, setUserName, location.state]);
 
-  const handleUserClick = () => {
-    navigate(`/users/${userId}`);
+  const handleCommentChange = (photoId, value) => {
+    setNewComment((prev) => ({ ...prev, [photoId]: value }));
+  };
+
+  const handleCommentSubmit = (photoId) => {
+    const commentText = newComment[photoId];
+    if (!commentText || commentText.trim() === "") {
+      alert("Comment cannot be empty");
+      return;
+    }
+
+    axios
+      .post(`/commentsOfPhoto/${photoId}`, { comment: commentText })
+      .then((response) => {
+        // Update the photo comments immediately
+        setPhotoDetails((prevPhotos) =>
+          prevPhotos.map((photo) =>
+            photo._id === photoId
+              ? {
+                  ...photo,
+                  comments: [
+                    ...photo.comments,
+                    {
+                      _id: new Date().getTime().toString(), // Temporary ID
+                      comment: commentText,
+                      date_time: new Date().toISOString(),
+                      user: {
+                        _id: loggedInUser._id,
+                        first_name: loggedInUser.first_name,
+                        last_name: loggedInUser.last_name,
+                      },
+                    },
+                  ],
+                }
+              : photo
+          )
+        );
+        setNewComment((prev) => ({ ...prev, [photoId]: "" }));
+      })
+      .catch((error) => {
+        console.error("Error adding comment:", error);
+        alert("Failed to add comment");
+      });
+  };
+
+  const handleUserClick = (id) => {
+    console.log("Navigating to user ID:", id);
+    navigate(`/users/${id}`);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
-        padding: 4,
-      }}
-    >
-      <Grid
-        container
-        direction="column"
-        spacing={3}
-        sx={{ maxWidth: 800, width: "100%" }}
-      >
+    <Box className="user-photos-container">
+      <Grid container direction="column" spacing={2}>
         {userDetails && (
           <Grid item xs={12}>
-            <Typography variant="h4" align="center" gutterBottom>
+            <Typography variant="h5" gutterBottom>
               {userDetails.first_name} {userDetails.last_name}
             </Typography>
-            <Divider sx={{ margin: "10px 0" }} />
+            <Divider sx={{ margin: "15px 0" }} />
           </Grid>
         )}
-
         {photoDetails.map((photo, index) => (
           <Grid item xs={12} key={index}>
-            <Card 
-              sx={{
-                padding: 3,
-                borderRadius: 2,
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              <CardContent
-                sx={{ 
-                  display: "flex", 
-                  flexDirection: "column", 
-                  gap: 2 
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Date:</strong> {photo.date_time}
+            <Card className="photo-card">
+              <CardContent>
+                <Typography variant="body1" className="photo-date">
+                  {formatDate(photo.date_time)}
                 </Typography>
 
-                <Divider />
+                <Divider sx={{ margin: "15px 0" }} />
 
                 <img
                   src={`/images/${photo.file_name}`}
                   alt={photo.file_name}
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: "8px",
-                    marginBottom: "10px",
-                  }}
+                  className="photo-image"
                 />
 
-                <Divider />
+                <Divider sx={{ margin: "15px 0" }} />
 
-                {Array.isArray(photo.comments) && (
-                  <Box>
+                {Array.isArray(photo.comments) && photo.comments.length > 0 && (
+                  <>
                     {photo.comments.map((comment, commentIndex) => (
                       <React.Fragment key={commentIndex}>
-                        <Box sx={{ marginBottom: 2 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            width: "100%",
+                          }}
+                        >
                           <Typography
                             onClick={() => handleUserClick(comment.user._id)}
                             variant="body1"
-                            color="primary"
-                            sx={{ 
-                              cursor: "pointer", 
-                              "&:hover": { textDecoration: "underline" },
-                            }}
+                            className="user-link"
                           >
-                            <strong>
-                              {comment.user.first_name} {comment.user.last_name}
-                            </strong>
+                            {comment.user.first_name} {comment.user.last_name}
                           </Typography>
-
-                          <Typography 
-                            variant="body2" 
-                            color="text.secondary" 
-                            sx={{ marginLeft: 2 }}
-                          >
+                          <Typography variant="body2" className="comment-text">
                             {comment.comment}
                           </Typography>
-
-                          <Typography 
-                            variant="caption" 
-                            color="text.secondary" 
-                            sx={{ alignSelf: "flex-end", display: "block", marginTop: 1 }}
-                          >
-                            <strong>{comment.date_time}</strong>
+                          <Typography variant="body2" className="comment-date">
+                            {formatDate(comment.date_time)}
                           </Typography>
                         </Box>
                         <Divider sx={{ margin: "5px 0" }} />
                       </React.Fragment>
                     ))}
-                  </Box>
+                  </>
                 )}
+
+                {/* Input Field and Submit Button for Adding Comments */}
+                <Box sx={{ marginTop: 2 }}>
+                  <TextField
+                    label="Add a comment"
+                    variant="outlined"
+                    fullWidth
+                    value={newComment[photo._id] || ""}
+                    onChange={(e) =>
+                      handleCommentChange(photo._id, e.target.value)
+                    }
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleCommentSubmit(photo._id)}
+                    sx={{ marginTop: 1 }}
+                  >
+                    Submit
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
